@@ -6,8 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export async function POST(req: Request) {
-  // Vérification clé secrète
+async function syncOpportunites(req: Request) {
   const { searchParams } = new URL(req.url)
   const secret = searchParams.get('secret')
   if (secret !== process.env.CRON_SECRET) {
@@ -15,7 +14,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Appel Claude API avec web search
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -55,24 +53,20 @@ Trouve entre 5 et 10 opportunités réelles et vérifiées. Ne retourne que le J
 
     const data = await response.json()
 
-    // Extraire le texte de la réponse
     const textContent = data.content
       .filter((block: any) => block.type === 'text')
       .map((block: any) => block.text)
       .join('')
 
-    // Parser le JSON
     const parsed = JSON.parse(textContent.replace(/```json|```/g, '').trim())
     const opportunites = parsed.opportunites
 
     if (!opportunites || !Array.isArray(opportunites)) {
-      return NextResponse.json({ error: 'Format invalide' }, { status: 500 })
+      return NextResponse.json({ error: 'Format invalide', raw: textContent }, { status: 500 })
     }
 
-    // Insérer dans Supabase en évitant les doublons
     const results = []
     for (const op of opportunites) {
-      // Vérifier si l'opportunité existe déjà
       const { data: existing } = await supabase
         .from('opportunites')
         .select('id')
@@ -109,4 +103,12 @@ Trouve entre 5 et 10 opportunités réelles et vérifiées. Ne retourne que le J
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+}
+
+export async function POST(req: Request) {
+  return syncOpportunites(req)
+}
+
+export async function GET(req: Request) {
+  return syncOpportunites(req)
 }
