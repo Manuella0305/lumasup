@@ -20,7 +20,7 @@ async function syncOpportunites(req: Request) {
         'Content-Type': 'application/json',
         'x-api-key': process.env.ANTHROPIC_API_KEY!,
         'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'web-search-2025-03-05'
+        'anthropic-beta': 'web-search-2025-03-05,interleaved-thinking-2025-05-14'
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
@@ -52,6 +52,11 @@ Trouve entre 5 et 10 opportunités réelles et vérifiées. Ne retourne que le J
     })
 
     const data = await response.json()
+    console.log('Claude response:', JSON.stringify(data, null, 2))
+
+        if (!data.content) {
+        return NextResponse.json({ error: 'No content from Claude', data }, { status: 500 })
+        }
 
     const textContent = data.content
       .filter((block: any) => block.type === 'text')
