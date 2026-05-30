@@ -1,26 +1,62 @@
-@import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #f0f0f0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.luma-container {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: #ffffff;
+  position: relative;
+}
+
+
+/* Scrollbar fine et moderne */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #b0afae transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 3px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #b0afae;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  opacity: 1;
+}
+
+/* Disparait quand on ne scrolle pas */
+.scroll-container {
+  scrollbar-width: none;
+}
+
+.scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-container:hover {
+  scrollbar-width: thin;
+}
+
+.scroll-container:hover::-webkit-scrollbar {
+  display: block;
+  width: 3px;
 }
