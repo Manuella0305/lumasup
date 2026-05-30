@@ -1,7 +1,7 @@
 'use client'
 
 import { supabase } from '@/lib/supabase'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Suspense  } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import * as d3 from 'd3-geo'
@@ -34,7 +34,7 @@ const AFRICA_BOUNDS = { minLon: -18, maxLon: 52, minLat: -35, maxLat: 38 }
 const svgWidth = 380
 const svgHeight = 420
 
-export default function Explorer() {
+function ExplorerInner() {
   const [ecoles, setEcoles] = useState<any[]>([])
   const [filtrees, setFiltrees] = useState<any[]>([])
   const [paysCounts, setPaysCounts] = useState<Record<string, number>>({})
@@ -74,14 +74,17 @@ export default function Explorer() {
         const projection = d3.geoMercator().center([22, 2]).scale(260).translate([svgWidth / 2, svgHeight / 2])
         const pathGen = d3.geoPath().projection(projection)
         const countries = topojson.feature(world, world.objects.countries)
-        const africaFeatures = countries.features.filter((f: any) => {
+        const africaFeatures = (countries as any).features.filter((f: any) => {
           try {
             const c = d3.geoCentroid(f)
             return c[0] >= AFRICA_BOUNDS.minLon && c[0] <= AFRICA_BOUNDS.maxLon &&
                    c[1] >= AFRICA_BOUNDS.minLat && c[1] <= AFRICA_BOUNDS.maxLat
           } catch { return false }
         })
-        setPaths(africaFeatures.map((f: any) => ({ id: String(f.id), d: pathGen(f) ?? '' })))
+        setPaths((africaFeatures as any[])
+            .filter((f: any) => f.id !== undefined)
+            .map((f: any, i: number) => ({ id: `${String(f.id)}-${i}`, d: pathGen(f) ?? '' }))
+          )
         setMarkers(Object.entries(PAYS_INFO).map(([pays, { coords }]) => {
           const [x, y] = projection(coords) ?? [0, 0]
           return { pays, x, y }
@@ -382,5 +385,12 @@ export default function Explorer() {
       </div>
 
     </div>
+  )
+}
+export default function Explorer() {
+  return (
+    <Suspense fallback={null}>
+      <ExplorerInner />
+    </Suspense>
   )
 }
