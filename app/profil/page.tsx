@@ -1,6 +1,7 @@
 'use client'
-
-import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   IconHome, IconPlayerPlay, IconCompass, IconUser,
@@ -15,6 +16,16 @@ const NAV = [
   { href: '/explorer', icon: IconCompass,    label: 'Explorer' },
   { href: '/profil',   icon: IconUser,       label: 'Profil' },
 ]
+
+const router = useRouter()
+const [user, setUser] = useState<any>(null)
+
+useEffect(() => {
+  supabase.auth.getUser().then(({ data }) => setUser(data.user))
+  supabase.auth.onAuthStateChange((_event, session) => {
+    setUser(session?.user ?? null)
+  })
+}, [])
 
 const DOMAINES_DISPO = ['ingenierie', 'informatique', 'business', 'sante', 'droit', 'agriculture', 'sciences', 'lettres']
 const PAYS_DISPO = ['Cameroun', 'France', 'Sénégal', 'Côte d\'Ivoire', 'Maroc', 'Belgique', 'Canada']
@@ -45,13 +56,40 @@ export default function Profil() {
 
         {/* Avatar + infos */}
         <div style={{ padding: '24px 16px 20px', display: 'flex', alignItems: 'center', gap: '16px', borderBottom: '0.5px solid #f0f0f0' }}>
-          <div style={{ width: '56px', height: '56px', borderRadius: '10px', background: '#f5f0eb', border: '0.5px solid #e8e0d8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <IconUser size={28} color="#888" />
+          <div style={{ width: '56px', height: '56px', borderRadius: '10px', background: user ? ACCENT : '#f5f0eb', border: '0.5px solid #e8e0d8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {user?.user_metadata?.avatar_url
+              ? <img src={user.user_metadata.avatar_url} style={{ width: '56px', height: '56px', borderRadius: '10px', objectFit: 'cover' }} />
+              : <IconUser size={28} color={user ? '#fff' : '#888'} />
+            }
           </div>
-          <div>
-            <p style={{ fontSize: '16px', fontWeight: '600', color: '#111', margin: '0 0 3px' }}>Mon compte</p>
-            <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>Bientôt — connexion disponible</p>
+          <div style={{ flex: 1 }}>
+            {user ? (
+              <>
+                <p style={{ fontSize: '16px', fontWeight: '600', color: '#111', margin: '0 0 3px' }}>
+                  {user.user_metadata?.full_name ?? user.email?.split('@')[0]}
+                </p>
+                <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>{user.email}</p>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: '15px', fontWeight: '600', color: '#111', margin: '0 0 4px' }}>Non connecté</p>
+                <button
+                  onClick={() => router.push('/connexion')}
+                  style={{ fontSize: '12px', color: '#fff', background: ACCENT, border: 'none', borderRadius: '4px', padding: '5px 12px', cursor: 'pointer', fontWeight: '500' }}
+                >
+                  Se connecter
+                </button>
+              </>
+            )}
           </div>
+          {user && (
+            <button
+              onClick={async () => { await supabase.auth.signOut(); setUser(null) }}
+              style={{ fontSize: '11px', color: '#999', background: '#f5f5f5', border: 'none', borderRadius: '4px', padding: '5px 10px', cursor: 'pointer' }}
+            >
+              Déconnexion
+            </button>
+          )}
         </div>
 
         {/* Préférences */}
