@@ -1,4 +1,5 @@
 'use client'
+
 import { supabase } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -17,24 +18,24 @@ const NAV = [
   { href: '/profil',   icon: IconUser,       label: 'Profil' },
 ]
 
-const router = useRouter()
-const [user, setUser] = useState<any>(null)
-
-useEffect(() => {
-  supabase.auth.getUser().then(({ data }) => setUser(data.user))
-  supabase.auth.onAuthStateChange((_event, session) => {
-    setUser(session?.user ?? null)
-  })
-}, [])
-
 const DOMAINES_DISPO = ['ingenierie', 'informatique', 'business', 'sante', 'droit', 'agriculture', 'sciences', 'lettres']
-const PAYS_DISPO = ['Cameroun', 'France', 'Sénégal', 'Côte d\'Ivoire', 'Maroc', 'Belgique', 'Canada']
+const PAYS_DISPO = ['Cameroun', 'France', 'Sénégal', "Côte d'Ivoire", 'Maroc', 'Belgique', 'Canada']
 
 export default function Profil() {
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
   const [domaines, setDomaines] = useState<string[]>(['ingenierie', 'informatique'])
   const [pays, setPays] = useState<string[]>(['Cameroun', 'France'])
   const [showDomainesPicker, setShowDomainesPicker] = useState(false)
   const [showPaysPicker, setShowPaysPicker] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => listener.subscription.unsubscribe()
+  }, [])
 
   const toggleDomaine = (d: string) => {
     setDomaines(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])
@@ -56,9 +57,9 @@ export default function Profil() {
 
         {/* Avatar + infos */}
         <div style={{ padding: '24px 16px 20px', display: 'flex', alignItems: 'center', gap: '16px', borderBottom: '0.5px solid #f0f0f0' }}>
-          <div style={{ width: '56px', height: '56px', borderRadius: '10px', background: user ? ACCENT : '#f5f0eb', border: '0.5px solid #e8e0d8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '10px', background: user ? ACCENT : '#f5f0eb', border: '0.5px solid #e8e0d8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
             {user?.user_metadata?.avatar_url
-              ? <img src={user.user_metadata.avatar_url} style={{ width: '56px', height: '56px', borderRadius: '10px', objectFit: 'cover' }} />
+              ? <img src={user.user_metadata.avatar_url} style={{ width: '56px', height: '56px', objectFit: 'cover' }} />
               : <IconUser size={28} color={user ? '#fff' : '#888'} />
             }
           </div>
@@ -72,21 +73,17 @@ export default function Profil() {
               </>
             ) : (
               <>
-                <p style={{ fontSize: '15px', fontWeight: '600', color: '#111', margin: '0 0 4px' }}>Non connecté</p>
-                <button
-                  onClick={() => router.push('/connexion')}
-                  style={{ fontSize: '12px', color: '#fff', background: ACCENT, border: 'none', borderRadius: '4px', padding: '5px 12px', cursor: 'pointer', fontWeight: '500' }}
-                >
+                <p style={{ fontSize: '15px', fontWeight: '600', color: '#111', margin: '0 0 6px' }}>Non connecté</p>
+                <button onClick={() => router.push('/connexion')}
+                  style={{ fontSize: '12px', color: '#fff', background: ACCENT, border: 'none', borderRadius: '4px', padding: '6px 14px', cursor: 'pointer', fontWeight: '500' }}>
                   Se connecter
                 </button>
               </>
             )}
           </div>
           {user && (
-            <button
-              onClick={async () => { await supabase.auth.signOut(); setUser(null) }}
-              style={{ fontSize: '11px', color: '#999', background: '#f5f5f5', border: 'none', borderRadius: '4px', padding: '5px 10px', cursor: 'pointer' }}
-            >
+            <button onClick={async () => { await supabase.auth.signOut(); setUser(null) }}
+              style={{ fontSize: '11px', color: '#999', background: '#f5f5f5', border: 'none', borderRadius: '4px', padding: '5px 10px', cursor: 'pointer' }}>
               Déconnexion
             </button>
           )}
@@ -98,46 +95,40 @@ export default function Profil() {
             Mes préférences
           </p>
 
-          {/* Domaines */}
           <div style={{ marginBottom: '16px' }}>
             <p style={{ fontSize: '13px', color: '#444', fontWeight: '500', margin: '0 0 10px' }}>Domaines d'intérêt</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px', alignItems: 'center' }}>
               {domaines.map(d => (
                 <span key={d} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', background: '#f5f0eb', color: '#444', padding: '5px 10px', borderRadius: '4px', border: '0.5px solid #e8e0d8' }}>
                   {d}
-                  <button onClick={() => toggleDomaine(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+                  <button onClick={() => toggleDomaine(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
                     <IconX size={11} color="#999" />
                   </button>
                 </span>
               ))}
               {domaines.length < DOMAINES_DISPO.length && (
-                <button
-                  onClick={() => setShowDomainesPicker(true)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: ACCENT, background: 'none', border: `1px solid ${ACCENT}`, padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                >
+                <button onClick={() => setShowDomainesPicker(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: ACCENT, background: 'none', border: `1px solid ${ACCENT}`, padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>
                   <IconPlus size={12} /> Ajouter
                 </button>
               )}
             </div>
           </div>
 
-          {/* Pays */}
           <div>
             <p style={{ fontSize: '13px', color: '#444', fontWeight: '500', margin: '0 0 10px' }}>Pays cibles</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px', alignItems: 'center' }}>
               {pays.map(p => (
                 <span key={p} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', background: '#f5f0eb', color: '#444', padding: '5px 10px', borderRadius: '4px', border: '0.5px solid #e8e0d8' }}>
                   {p}
-                  <button onClick={() => togglePays(p)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+                  <button onClick={() => togglePays(p)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
                     <IconX size={11} color="#999" />
                   </button>
                 </span>
               ))}
               {pays.length < PAYS_DISPO.length && (
-                <button
-                  onClick={() => setShowPaysPicker(true)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: ACCENT, background: 'none', border: `1px solid ${ACCENT}`, padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                >
+                <button onClick={() => setShowPaysPicker(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: ACCENT, background: 'none', border: `1px solid ${ACCENT}`, padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>
                   <IconPlus size={12} /> Ajouter
                 </button>
               )}
@@ -166,7 +157,6 @@ export default function Profil() {
           ))}
         </div>
 
-        {/* Version */}
         <p style={{ textAlign: 'center', fontSize: '11px', color: '#ddd', padding: '24px 0 8px' }}>Luma · version 0.1</p>
       </div>
 
